@@ -40,9 +40,6 @@ f_point.data <- function(file_name){
   data <- f_tblR.JSON(file_name)
   ## Create an sf object and assign CRS
   data <- st_as_sf(data, coords = c("lng", "lat"), crs = 4326)
-  ## Remove this
-  data <- data %>%
-    filter(date > '2017-09-01' & date < '2017-10-04')
   ## From long-format table to wide-format table
   data <- data %>%
     spread(date, t2m)
