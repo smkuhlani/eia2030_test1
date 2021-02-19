@@ -89,6 +89,7 @@ all.data <- function(file_name, resolution){
 }
 
 full.dataset <- all.data('POWER_Regional_Daily_20170201_20210207_74d3dbce.json', 0.0833)
+
 library(osmdata)
 ## Get Kiambu data
 kmb <- opq(bbox = 'Kiambu KE', timeout = 25*10) %>%
@@ -108,3 +109,7 @@ leaflet() %>%
   addTiles() %>% # Add default OpenStreetMap map tiles
   addRasterImage(raster(full.dataset$datacube[[1]]), colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
   addPolygons(data = aoi$geometry, weight = 2, fillColor = 'transparent')
+
+## Write all data
+terra::writeRaster(br, filename = "multi.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
+st_write(sep2017Weather, dsn = "pts.geojson", layer = "pts", driver = "GeoJSON")
