@@ -1,4 +1,4 @@
-tblR.JSON <- function(file_name){
+f_tblR.JSON <- function(file_name){
   require(rjson)
   require(tidyverse)
   require(sf)
@@ -34,10 +34,10 @@ tblR.JSON <- function(file_name){
   return(json)
 }
 
-point.data <- function(file_name){
+f_point.data <- function(file_name){
   require(sf)
   ## Input data
-  data <- tblR.JSON(file_name)
+  data <- f_tblR.JSON(file_name)
   ## Create an sf object and assign CRS
   data <- st_as_sf(data, coords = c("lng", "lat"), crs = 4326)
   ## Remove this
@@ -51,10 +51,10 @@ point.data <- function(file_name){
   return(data)
 }
 
-# data <- point.data("POWER_Regional_Daily_20170201_20210207_74d3dbce.json")
+# data <- f_point.data("POWER_Regional_Daily_20170201_20210207_74d3dbce.json")
 
-data.Cube <- function(file_name, tr){
-  pnt <- point.data(file_name)
+f_data.Cube <- function(file_name, tr){
+  pnt <- f_point.data(file_name)
   require(raster)
   st <- stack()
   n <- 1
@@ -76,19 +76,19 @@ data.Cube <- function(file_name, tr){
   return(br) 
 }
 
-# data <- data.Cube("POWER_Regional_Daily_20170201_20210207_74d3dbce.json", 0.0833)
+# data <- f_data.Cube("POWER_Regional_Daily_20170201_20210207_74d3dbce.json", 0.0833)
 # plot(data[[13]], col=rev(terrain.colors(10)), main = "T2M")
 # plot(aoi$geometry, axes = TRUE, add = T)
 
-all.data <- function(file_name, resolution){
-  tbl <- tblR.JSON(file_name)
-  pnt <- point.data(file_name)
-  br <- data.Cube(file_name, resolution)
+f_all.data <- function(file_name, resolution){
+  tbl <- f_tblR.JSON(file_name)
+  pnt <- f_point.data(file_name)
+  br <- f_data.Cube(file_name, resolution)
   grp <- list("table" = tbl, "points" = pnt, "datacube" = br)
   return(grp)
 }
 
-full.dataset <- all.data('POWER_Regional_Daily_20170201_20210207_74d3dbce.json', 0.0833)
+full.dataset <- f_all.data('POWER_Regional_Daily_20170201_20210207_74d3dbce.json', 0.0833)
 
 library(osmdata)
 ## Get Kiambu data
@@ -103,13 +103,16 @@ nrb <- opq(bbox = 'Nairobi KE', timeout = 25*10) %>%
   osmdata_sf()
 ## UNION both and create a new AOI
 aoi <- st_union(kmb$osm_multipolygons, nrb$osm_multipolygons, crs = 4326)
+
 library(leaflet)
 ## Plot on Leaflet
 leaflet() %>%
   addTiles() %>% # Add default OpenStreetMap map tiles
-  addRasterImage(raster(full.dataset$datacube[[1]]), colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
+  # addRasterImage(raster(full.dataset$datacube[[1]]), colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
+  addRasterImage(mask(raster(full.dataset$datacube[[1]]), st_as_sf(aoi$geometry)),
+                 colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
   addPolygons(data = aoi$geometry, weight = 2, fillColor = 'transparent')
 
 ## Write all data
-terra::writeRaster(br, filename = "multi.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
-st_write(sep2017Weather, dsn = "pts.geojson", layer = "pts", driver = "GeoJSON")
+terra::writeRaster(full.dataset$datacube, filename = "POWER_Regional_Daily_201701_2021_02_07.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
+st_write(full.dataset$points, dsn = "POWER_Regional_Daily_201701_2021_02_07.geojson", layer = "pts", driver = "GeoJSON")
