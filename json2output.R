@@ -1,4 +1,4 @@
-f_tblR.JSON <- function(file_name){ #deletethiscomment:)
+f_tblR.JSON <- function(file_name){
   require(rjson)
   require(tidyverse)
   require(sf)
