@@ -1,4 +1,4 @@
-f_tblR.JSON <- function(file_name){ #fava
+f_tblR.JSON <- function(file_name){ #favisima
   require(rjson)
   require(tidyverse)
   require(sf)
