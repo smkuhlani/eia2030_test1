@@ -11,14 +11,14 @@ f_tblR.JSON <- function(file_name){ #deletethiscomment
              (name1 == "features" &
                 name2 == "properties" &
                 name3 == "parameter")) %>%
-    select(name5, value)
+    dplyr::select(name5, value)
   ## Create new columns
   json <- json %>%
     mutate(lat = if_else(is.na(name5), as.numeric(value), as.numeric(NA))) %>%
     mutate(lng = if_else(is.na(name5), as.numeric(lag(value, n = 1L)), as.numeric(NA))) %>% # Use the cell above as Longitude... This has to do with the way the JSON is structured
     mutate(date = if_else(is.na(name5), as.Date(NA), as.Date(name5, "%Y%m%d"))) %>% # Format the dates
     mutate(t2m = if_else(is.na(name5), as.numeric(NA), as.numeric(value))) %>% # Extract the measured values
-    select(lat, lng, date, t2m) %>%
+    dplyr::select(lat, lng, date, t2m) %>%
     filter(!is.na(lat) & !is.na(lng) |
              (!is.na(date) & !is.na(t2m)))
   ## 
@@ -88,31 +88,31 @@ f_all.data <- function(file_name, resolution){
   return(grp)
 }
 
-full.dataset <- f_all.data('POWER_Regional_Daily_20170201_20210207_74d3dbce.json', 0.0833)
+# full.dataset <- f_all.data('POWER_Regional_Daily_20170201_20210207_74d3dbce.json', 0.0833)
 
-library(osmdata)
-## Get Kiambu data
-kmb <- opq(bbox = 'Kiambu KE', timeout = 25*10) %>%
-  add_osm_feature(key = 'name', value = "Kiambu", value_exact = T) %>%
-  add_osm_feature(key = 'admin_level', value = "4", value_exact = T) %>%
-  osmdata_sf()
-## Get Nairobi Data
-nrb <- opq(bbox = 'Nairobi KE', timeout = 25*10) %>%
-  add_osm_feature(key = 'name', value = "Nairobi", value_exact = T) %>%
-  add_osm_feature(key = 'admin_level', value = "4", value_exact = T) %>%
-  osmdata_sf()
-## UNION both and create a new AOI
-aoi <- st_union(kmb$osm_multipolygons, nrb$osm_multipolygons, crs = 4326)
+# library(osmdata)
+# ## Get Kiambu data
+# kmb <- opq(bbox = 'Kiambu KE', timeout = 25*10) %>%
+#   add_osm_feature(key = 'name', value = "Kiambu", value_exact = T) %>%
+#   add_osm_feature(key = 'admin_level', value = "4", value_exact = T) %>%
+#   osmdata_sf()
+# ## Get Nairobi Data
+# nrb <- opq(bbox = 'Nairobi KE', timeout = 25*10) %>%
+#   add_osm_feature(key = 'name', value = "Nairobi", value_exact = T) %>%
+#   add_osm_feature(key = 'admin_level', value = "4", value_exact = T) %>%
+#   osmdata_sf()
+# ## UNION both and create a new AOI
+# aoi <- st_union(kmb$osm_multipolygons, nrb$osm_multipolygons, crs = 4326)
 
-library(leaflet)
-## Plot on Leaflet
-leaflet() %>%
-  addTiles() %>% # Add default OpenStreetMap map tiles
-  # addRasterImage(raster(full.dataset$datacube[[1]]), colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
-  addRasterImage(mask(raster(full.dataset$datacube[[1]]), st_as_sf(aoi$geometry)),
-                 colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
-  addPolygons(data = aoi$geometry, weight = 2, fillColor = 'transparent')
+# library(leaflet)
+# ## Plot on Leaflet
+# leaflet() %>%
+#   addTiles() %>% # Add default OpenStreetMap map tiles
+#   # addRasterImage(raster(full.dataset$datacube[[1]]), colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
+#   addRasterImage(mask(raster(full.dataset$datacube[[1]]), st_as_sf(aoi$geometry)),
+#                  colors = rev(terrain.colors(10)), opacity = 0.8, project = FALSE) %>%
+#   addPolygons(data = aoi$geometry, weight = 2, fillColor = 'transparent')
 
-## Write all data
-terra::writeRaster(full.dataset$datacube, filename = "POWER_Regional_Daily_201701_2021_02_07.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
-st_write(full.dataset$points, dsn = "POWER_Regional_Daily_201701_2021_02_07.geojson", layer = "pts", driver = "GeoJSON")
+# ## Write all data
+# terra::writeRaster(full.dataset$datacube, filename = "POWER_Regional_Daily_201701_2021_02_07.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
+# st_write(full.dataset$points, dsn = "POWER_Regional_Daily_201701_2021_02_07.geojson", layer = "pts", driver = "GeoJSON")
