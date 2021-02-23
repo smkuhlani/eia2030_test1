@@ -88,7 +88,7 @@ f_all.data <- function(file_name, resolution){
   return(grp)
 }
 
-# full.dataset <- f_all.data('POWER_Regional_Daily_20170201_20210207_74d3dbce.json', 0.0833)
+full.dataset <- f_all.data('POWER_Regional_Daily_20200601_20200731_9f776877.json', 0.0833)
 
 # library(osmdata)
 # ## Get Kiambu data
